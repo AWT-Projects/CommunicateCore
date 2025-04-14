@@ -1,0 +1,6 @@
+[submodule "tcp-sock"]
+	path = tcp-sock
+	url = git@github.com:PCW-Learning/sw_tcp_sock.git
+[submodule "uds"]
+	path = uds
+	url = git@github.com:PCW-Learning/sw_unix_domain_sock.git
