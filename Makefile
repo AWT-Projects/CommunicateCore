@@ -35,10 +35,10 @@ GTEST_CFLAGS = -Wall -g -I$(INCLUDE_DIR) -I$(GTEST_INCLUDE_DIR) -std=c++11
 GTEST_LDFLAGS = -L$(GTEST_LIB_DIR) -lgtest -lgtest_main -lpthread
 
 
-all: $(PROCESS1_APP) 
+all: $(PROCESS1_APP)
 
 $(PROCESS1_APP): $(PROCESS1_APP_OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(PROCESS1_APP_OBJS) $(LDLIBS) -I./  -lpthread -ltcpsock_desktop
+	$(CC) $(LDFLAGS) -o $@ $(PROCESS1_APP_OBJS) $(LDLIBS) -I./  -lpthread -ltcpsock_desktop -luds
 
 
 $(OBJS_DIR)/%.o: %.c
