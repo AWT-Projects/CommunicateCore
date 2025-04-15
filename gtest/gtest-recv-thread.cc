@@ -5,7 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/time.h>
-#include "../tcp-frame-format.h"
+#include "../frame-format.h"
 #include "../process1.h"
 #include "../cmd-handler.h"
 #include "../command.h"

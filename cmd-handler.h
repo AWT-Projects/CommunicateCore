@@ -1,5 +1,6 @@
 #ifndef CMD_HANDLER_H
 #define CMD_HANDLER_H
+
 #include "logger.h"
 
 // 명령 ID 정의
@@ -8,6 +9,12 @@ typedef enum {
     CMD_IBIT,
     CMD_RBIT,
     CMD_CBIT,
+
+    CMD_UDS_GPS_DATA = 1000,
+    CMD_UDS_IMU_DATA,
+    CMD_UDS_SP_DATA,
+    CMD_UDS_EXTERN_DATA,
+    CMD_UDS_KEYBOARD_DATA,
     CMD_UNKNOWN
 } cmd_id_t;
 

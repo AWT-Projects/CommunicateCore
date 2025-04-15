@@ -1,5 +1,5 @@
-#ifndef TRACKING_CTRL_H
-#define TRACKING_CTRL_H
+#ifndef PROCESS1_H
+#define PROCESS1_H
 
 #include <tcp-sock.h>
 #include <pthread.h>

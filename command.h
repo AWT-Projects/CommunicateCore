@@ -44,15 +44,59 @@ typedef struct __attribute__((__packed__)){
 }SND_CBIT;
 
 
-
-
 // 명령별 핸들러 함수 선언
 int keepAlive(const char* payload, char* response);
 int iBit(const char* payload, char* response);
 int rBit(const char* payload, char* response);
 int cBit(const char* payload, char* response);
 
+/* UDS */
+typedef struct __attribute__((__packed__)){
+	double dLatitude;
+    double dLongitude;
+    double dAltitude;
+}GPS_DATA;
 
+typedef struct __attribute__((__packed__)){
+	double dRoll;
+    double dPitch;
+    double dYaw;
+}IMU_DATA;
 
+typedef struct __attribute__((__packed__)){
+	double dAz;
+    double dEl;
+}SP_DATA;
+
+typedef struct __attribute__((__packed__)){
+	double dLatitude;
+    double dLongitude;
+    double dAltitude;
+}EXTERN_DATA;
+
+typedef struct __attribute__((__packed__)){
+	double dAz;
+    double dEl;
+}KEYBOARD_DATA;
+
+typedef struct __attribute__((__packed__)){
+	double dAz;
+    double dEl;
+}ACU_DATA;
+
+typedef struct __attribute__((__packed__)){
+	GPS_DATA stGpsData;
+    IMU_DATA stImuData;
+    SP_DATA stSpData;
+    EXTERN_DATA stExternData;
+    KEYBOARD_DATA stKeyboardData;
+    ACU_DATA stAcuData;
+}SENSOR_DATA;
+
+int recvGpsData(const char* pchPayload, char* pchResponse);
+int recvImuData(const char* pchPayload, char* pchResponse);
+int recvSpData(const char* pchPayload, char* pchResponse);
+int recvExternData(const char* pchPayload, char* pchResponse);
+int recvKeyboardData(const char* pchPayload, char* pchResponse);
 
 #endif

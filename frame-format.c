@@ -1,5 +1,6 @@
-#include "tcp-frame-format.h"
+#include "frame-format.h"
 #include "cmd-handler.h"
+#include <stdio.h>
 
 char calculatePacketCrc(const char* pchData, int iSize)
 {
@@ -38,7 +39,7 @@ void makeSendPacket(short nCmd, const char* chMsgId, const char* pchData)
     FRAME_HEADER *pstFrameHeader    = (FRAME_HEADER *)pchData;
     int iCmdSize                    = getSendCmdSize((cmd_id_t)nCmd);
     FRAME_TAIL *pstFrameTaile       = (FRAME_TAIL *)(pchData + sizeof(FRAME_HEADER) + iCmdSize);
-    pstFrameHeader->nStx            = PACKET_STX;
+    pstFrameHeader->unStx            = PACKET_STX;
     pstFrameHeader->chSrcId         = PACKET_DST_ID;
     pstFrameHeader->chDstId         = PACKET_SRC_ID;
     pstFrameHeader->chSubModule     = 0x00;
@@ -46,7 +47,7 @@ void makeSendPacket(short nCmd, const char* chMsgId, const char* pchData)
     pstFrameHeader->nCmd            = nCmd;
 
     pstFrameTaile->chCrc            = calculatePacketCrc(pchData, sizeof(FRAME_HEADER) + iCmdSize + sizeof(FRAME_TAIL));
-    pstFrameTaile->nEtx             = PACKET_ETX;
+    pstFrameTaile->unEtx             = PACKET_ETX;
 }
 
 /* for Google test*/
@@ -55,7 +56,7 @@ void makeRecvPacket(short nCmd, const char* chMsgId, const char* pchData)
     FRAME_HEADER *pstFrameHeader    = (FRAME_HEADER *)pchData;
     int iCmdSize                    = getSendCmdSize((cmd_id_t)nCmd);
     FRAME_TAIL *pstFrameTaile       = (FRAME_TAIL *)(pchData + sizeof(FRAME_HEADER) + iCmdSize);
-    pstFrameHeader->nStx            = PACKET_STX;
+    pstFrameHeader->unStx            = PACKET_STX;
     pstFrameHeader->chSrcId         = PACKET_SRC_ID;
     pstFrameHeader->chDstId         = PACKET_DST_ID;
     pstFrameHeader->chSubModule     = 0x00;
@@ -63,7 +64,7 @@ void makeRecvPacket(short nCmd, const char* chMsgId, const char* pchData)
     pstFrameHeader->nCmd            = nCmd;
 
     pstFrameTaile->chCrc            = calculatePacketCrc(pchData, sizeof(FRAME_HEADER) + iCmdSize + sizeof(FRAME_TAIL));
-    pstFrameTaile->nEtx             = PACKET_ETX;
+    pstFrameTaile->unEtx             = PACKET_ETX;
 }
 
 
@@ -75,12 +76,13 @@ unsigned int checkPacketFormat(char* pchRecvData, int iPacketSize)
     int iTotalPacketSize = getTotalRecvSize(pchRecvData, iPacketSize);
     unsigned int uiResult=PACKET_FORMAT_OK;
     
-    if(iTotalPacketSize != iPacketSize){
+    if(iTotalPacketSize != iPacketSize){        
         uiResult |= PACKET_SIZE_ERROR;
         return uiResult;
     }
 
-    if(pstHeader->nStx != PACKET_STX){
+    if(pstHeader->unStx != PACKET_STX){
+        fprintf(stderr,"%d(%x) %d(%x)\n", pstHeader->unStx, pstHeader->unStx, PACKET_STX, PACKET_STX);
         uiResult |= PACKET_STX_ERROR;
     }
     
@@ -96,9 +98,34 @@ unsigned int checkPacketFormat(char* pchRecvData, int iPacketSize)
         uiResult |= PACKET_CRC_ERROR;
     }
 
-    if(pstTail->nEtx != PACKET_ETX){
+    if(pstTail->unEtx != PACKET_ETX){
+        fprintf(stderr,"%d(%x) %d(%x)\n", pstTail->unEtx, pstTail->unEtx, PACKET_ETX, PACKET_ETX);
         uiResult |= PACKET_ETX_ERROR;
     }
 
     return uiResult;
+}
+
+void printPacketFormatError(unsigned int uiResult) 
+{
+    printf("패킷 포맷 오류:\n");
+
+    if (uiResult & PACKET_SIZE_ERROR) {
+        printf(" - 패킷 크기 불일치\n");
+    }
+    if (uiResult & PACKET_STX_ERROR) {
+        printf(" - STX 오류 (시작 바이트)\n");
+    }
+    if (uiResult & PACKET_SRC_ID_ERROR) {
+        printf(" - 송신 ID 오류\n");
+    }
+    if (uiResult & PACKET_DST_ID_ERROR) {
+        printf(" - 수신 ID 오류\n");
+    }
+    if (uiResult & PACKET_CRC_ERROR) {
+        printf(" - CRC 오류\n");
+    }
+    if (uiResult & PACKET_ETX_ERROR) {
+        printf(" - ETX 오류 (종료 바이트)\n");
+    }
 }
