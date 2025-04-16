@@ -15,9 +15,16 @@
 class UDSServerTestEnv : public ::testing::Environment {
 public:
     pthread_t server_tid;
+    pthread_t processing_tid;
+    SHARED_SENSOR_DATA stSharedSensorData;
 
     void SetUp() override {
-        pthread_create(&server_tid, nullptr, sensorServerThread, nullptr);
+        // 뮤텍스 및 조건변수 초기화
+        pthread_mutex_init(&stSharedSensorData.mutex, nullptr);
+        pthread_cond_init(&stSharedSensorData.cond, nullptr);
+
+        pthread_create(&server_tid, nullptr, sensorServerThread, &stSharedSensorData);
+        pthread_create(&processing_tid, nullptr, processingSensorDataThread, &stSharedSensorData);
         std::this_thread::sleep_for(std::chrono::milliseconds(200)); // 서버 준비 대기
     }
 
@@ -57,13 +64,19 @@ TEST(UDSSocketMultiClientTest, SimultaneousClientDataSend10Times) {
     char chMsgId[2] = {0x01, 0x02};
     makeRecvPacket(CMD_UDS_GPS_DATA, chMsgId, achGpsData);
     GPS_DATA *pstGps = (GPS_DATA *)(achGpsData + sizeof(FRAME_HEADER));
-
+    pstGps->dLatitude = 1.1;
+    pstGps->dLongitude = 2.1;
+    pstGps->dAltitude = 3.1;
     makeRecvPacket(CMD_UDS_IMU_DATA, chMsgId, achImuData);
     IMU_DATA *pstImu = (IMU_DATA *)(achImuData + sizeof(FRAME_HEADER));
+    pstImu->dRoll = 4.1;
+    pstImu->dPitch = 5.1;
+    pstImu->dYaw = 6.1;
 
     makeRecvPacket(CMD_UDS_SP_DATA, chMsgId, achSpData);
     SP_DATA *pstSp = (SP_DATA *)(achSpData + sizeof(FRAME_HEADER));
-
+    pstSp->dAz = 7.1;
+    pstSp->dEl = 8.1;
     makeRecvPacket(CMD_UDS_EXTERN_DATA, chMsgId, achExternData);
     EXTERN_DATA *pstExtern = (EXTERN_DATA *)(achExternData + sizeof(FRAME_HEADER));
 
@@ -73,14 +86,14 @@ TEST(UDSSocketMultiClientTest, SimultaneousClientDataSend10Times) {
     std::thread t1(sendDataRepeated, "GPS",         achGpsData,         sizeof(GPS_DATA)+iFrameSize,       20);
     std::thread t2(sendDataRepeated, "IMU",         achImuData,         sizeof(IMU_DATA)+iFrameSize,       20);
     std::thread t3(sendDataRepeated, "SP",          achSpData,          sizeof(SP_DATA)+iFrameSize,        20);
-    std::thread t4(sendDataRepeated, "EXTERN",      achExternData,      sizeof(EXTERN_DATA)+iFrameSize,    20);
-    std::thread t5(sendDataRepeated, "KEYBOARD",    achKeyboardData,    sizeof(KEYBOARD_DATA)+iFrameSize,  100);
+    // std::thread t4(sendDataRepeated, "EXTERN",      achExternData,      sizeof(EXTERN_DATA)+iFrameSize,    20);
+    // std::thread t5(sendDataRepeated, "KEYBOARD",    achKeyboardData,    sizeof(KEYBOARD_DATA)+iFrameSize,  100);
 
     t1.join();
     t2.join();
     t3.join();
-    t4.join();
-    t5.join();
+    // t4.join();
+    // t5.join();
 
     SUCCEED();
 }

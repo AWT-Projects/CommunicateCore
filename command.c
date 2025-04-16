@@ -33,7 +33,7 @@ int rBit(const char* pchPayload, char* pchResponse)
 int cBit(const char* pchPayload, char* pchResponse)
 {
     RCV_CBIT* pstRcvCBit = (RCV_CBIT *)pchPayload;
-    SND_CBIT* pstSndCBit = (SND_CBIT *)pchResponse;
+    SND_CBIT* pstSndCBit = (SND_CBIT *)pchResponse;    
     pstSndCBit->chBitTotResult = 0x01;
     pstSndCBit->chPositionResult = 0x01;
     return CMD_SUCCESS;
@@ -46,9 +46,13 @@ int recvGpsData(const char* pchPayload, char* pchResponse)
 {
     GPS_DATA* pstRcvGpsData = (GPS_DATA *)pchPayload;
     SENSOR_DATA* pstSensorData = (SENSOR_DATA *)pchResponse;
-    pstSensorData->stGpsData.dLatitude = pstRcvGpsData->dLatitude;
+    pstSensorData->stGpsData.dLatitude  = pstRcvGpsData->dLatitude;
     pstSensorData->stGpsData.dLongitude = pstRcvGpsData->dLongitude;
-    pstSensorData->stGpsData.dAltitude = pstRcvGpsData->dAltitude;
+    pstSensorData->stGpsData.dAltitude  = pstRcvGpsData->dAltitude;
+    fprintf(stderr, "##### %s():%d #####\n",__func__,__LINE__);
+    fprintf(stderr,"Latitude : %lf\n", pstSensorData->stGpsData.dLatitude);
+    fprintf(stderr,"Longitude : %lf\n", pstSensorData->stGpsData.dLongitude);
+    fprintf(stderr,"Altitude : %lf\n", pstSensorData->stGpsData.dAltitude);
     return CMD_SUCCESS;
 }
 
@@ -59,6 +63,10 @@ int recvImuData(const char* pchPayload, char* pchResponse)
     pstSensorData->stImuData.dRoll = pstRcvImuData->dRoll;
     pstSensorData->stImuData.dPitch = pstRcvImuData->dPitch;
     pstSensorData->stImuData.dYaw = pstRcvImuData->dYaw;
+    fprintf(stderr, "##### %s():%d #####\n",__func__,__LINE__);
+    fprintf(stderr,"Roll : %lf\n", pstSensorData->stImuData.dRoll);
+    fprintf(stderr,"Pitch : %lf\n", pstSensorData->stImuData.dPitch);
+    fprintf(stderr,"Yaw : %lf\n", pstSensorData->stImuData.dYaw);
     return CMD_SUCCESS;
 }
 
@@ -68,6 +76,9 @@ int recvSpData(const char* pchPayload, char* pchResponse)
     SENSOR_DATA* pstSensorData = (SENSOR_DATA *)pchResponse;
     pstSensorData->stSpData.dAz = pstRcvSpData->dAz;
     pstSensorData->stSpData.dEl = pstRcvSpData->dEl;
+    fprintf(stderr, "##### %s():%d #####\n",__func__,__LINE__);
+    fprintf(stderr,"AZ : %lf\n", pstSensorData->stSpData.dAz);
+    fprintf(stderr,"EL : %lf\n", pstSensorData->stSpData.dEl);
     return CMD_SUCCESS;
 }
 
