@@ -13,10 +13,9 @@ void *sendThread(void *arg) {
     struct sockaddr_in stSockClientAddr;
     socklen_t uiClientAddrLen = sizeof(stSockClientAddr);
     char achBuffer[BUFFER_SIZE];
-    bool bSendFlag = false;
-    bool bExitFlag = false;
     struct timeval stNow;
     struct timespec stTimeout;
+    int iDataSize;
 
     if (getpeername(pstClientInfo->iClientSock, (struct sockaddr *)&stSockClientAddr, &uiClientAddrLen) == -1) {
         perror("getpeername 실패");
@@ -29,12 +28,11 @@ void *sendThread(void *arg) {
         stTimeout.tv_nsec = stNow.tv_usec * 1000;
 
         pthread_mutex_lock(&pstClientInfo->exitFlagMutex);
-        bExitFlag = pstClientInfo->bExitFlag;
-        pthread_mutex_unlock(&pstClientInfo->exitFlagMutex);
-
-        if (bExitFlag) {
+        if(pstClientInfo->bExitFlag){
+            pthread_mutex_unlock(&pstClientInfo->exitFlagMutex);
             break;
         }
+        pthread_mutex_unlock(&pstClientInfo->exitFlagMutex);
 
         /**< 데이터 준비 상태 대기 */
         int ret = pthread_cond_timedwait(&pstClientInfo->stSharedData.cond, &pstClientInfo->stSharedData.mutex, &stTimeout);
@@ -42,17 +40,12 @@ void *sendThread(void *arg) {
             fprintf(stderr, ".");
         } else {
             memset(achBuffer, 0x0, BUFFER_SIZE);
-            pstClientInfo->stSharedData.hasData = false; /**< 데이터 사용 완료 플래그 초기화 */
-            memcpy(achBuffer, pstClientInfo->stSharedData.chData, strlen(pstClientInfo->stSharedData.chData));
+            iDataSize = pstClientInfo->stSharedData.iDataSize;
+            memcpy(achBuffer, pstClientInfo->stSharedData.chData, iDataSize);
             pthread_mutex_unlock(&pstClientInfo->stSharedData.mutex);
-            bSendFlag = true;
+            sendMessage(pstClientInfo->iClientSock, achBuffer, iDataSize);
         }
-
-        if (bSendFlag) {
-            /**< 데이터 송신 */
-            sendMessage(pstClientInfo->iClientSock, achBuffer, strlen(achBuffer));
-        }
-        bSendFlag = false;
+        
     }
 
     fprintf(stdout, "%s():%d 클라이언트 연결 해제, 소켓 IP: %s, 포트: %d\n", 

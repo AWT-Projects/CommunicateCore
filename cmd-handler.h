@@ -5,16 +5,25 @@
 
 // 명령 ID 정의
 typedef enum {
+    // process1에서 TCP/IP 와 UDS1 에 사용되는 ID (값의 범위 : 0 ~ 99)
     CMD_KEEP_ALIVE = 0,
     CMD_IBIT,
     CMD_RBIT,
     CMD_CBIT,
 
-    CMD_UDS_GPS_DATA = 1000,
-    CMD_UDS_IMU_DATA,
-    CMD_UDS_SP_DATA,
-    CMD_UDS_EXTERN_DATA,
-    CMD_UDS_KEYBOARD_DATA,
+    // process2에서 UDS2에 사용되는 ID (값의 범위 : 100 ~ 199)
+    UDS2_EXTERN1_DATA = 100,
+    UDS2_EXTERN2_DATA,
+    UDS2_EXTERN3_DATA,
+    UDS2_EXTERN4_DATA,
+
+    // process2에서 UDS3에 사용되는 ID (값의 범위 : 200 ~ 299)
+    UDS3_PROCESSING_DATA = 200,
+
+    // process3에서 UDS4에 사용되는 ID (값의 범위 : 300 ~ 399)
+    UDS4_CTRL_DATA = 300,
+    UDS4_COMMAND,
+        
     CMD_UNKNOWN
 } cmd_id_t;
 

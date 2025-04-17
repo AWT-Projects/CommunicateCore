@@ -2,6 +2,13 @@
 #include "cmd-handler.h"
 #include <stdio.h>
 
+/**
+ * @brief 패킷의 CRC 값을 계산합니다.
+ *
+ * @param pchData CRC를 계산할 데이터 버퍼
+ * @param iSize 데이터의 총 크기
+ * @return 계산된 CRC 값 (1바이트)
+ */
 char calculatePacketCrc(const char* pchData, int iSize)
 {
 	char chCrc=0x00;
@@ -14,6 +21,13 @@ char calculatePacketCrc(const char* pchData, int iSize)
 	return chCrc;
 }
 
+/**
+ * @brief 패킷의 CRC를 확인하여 유효성을 검사합니다.
+ *
+ * @param pchData 검사할 데이터 버퍼
+ * @param iSize 데이터의 총 크기
+ * @return CRC 일치 시 0, 불일치 시 -1 반환
+ */
 int checkPacketCrc(const char* pchData, int iSize)
 {
 	unsigned char uchCrc=calculatePacketCrc(pchData, iSize);
@@ -24,7 +38,7 @@ int checkPacketCrc(const char* pchData, int iSize)
 	return -1;
 }
 
-int getTotalRecvSize(char* pchRecvData, int iRecvSize)
+int getTotalRecvSize(const char* pchRecvData, int iRecvSize)
 {
     FRAME_HEADER* pstFrameHeader;
     if(iRecvSize < sizeof(FRAME_HEADER)){
@@ -34,14 +48,14 @@ int getTotalRecvSize(char* pchRecvData, int iRecvSize)
     return sizeof(FRAME_HEADER) + pstFrameHeader->iLength + sizeof(FRAME_TAIL);
 }
 
-void makeSendPacket(short nCmd, const char* chMsgId, const char* pchData)
+void makeSendPacket(short nCmd, const MSG_ID* pstMsgId, const char* pchData)
 {
     FRAME_HEADER *pstFrameHeader    = (FRAME_HEADER *)pchData;
     int iCmdSize                    = getSendCmdSize((cmd_id_t)nCmd);
     FRAME_TAIL *pstFrameTaile       = (FRAME_TAIL *)(pchData + sizeof(FRAME_HEADER) + iCmdSize);
-    pstFrameHeader->unStx            = PACKET_STX;
-    pstFrameHeader->chSrcId         = PACKET_DST_ID;
-    pstFrameHeader->chDstId         = PACKET_SRC_ID;
+    pstFrameHeader->unStx           = PACKET_STX;
+    pstFrameHeader->stMsgId.chSrcId = pstMsgId->chDstId;
+    pstFrameHeader->stMsgId.chDstId = pstMsgId->chSrcId;
     pstFrameHeader->chSubModule     = 0x00;
     pstFrameHeader->iLength         = getSendCmdSize((cmd_id_t)nCmd);
     pstFrameHeader->nCmd            = nCmd;
@@ -50,15 +64,14 @@ void makeSendPacket(short nCmd, const char* chMsgId, const char* pchData)
     pstFrameTaile->unEtx             = PACKET_ETX;
 }
 
-/* for Google test*/
-void makeRecvPacket(short nCmd, const char* chMsgId, const char* pchData)
+void makeRecvPacket(short nCmd, const MSG_ID* pstMsgId, const char* pchData)
 {
     FRAME_HEADER *pstFrameHeader    = (FRAME_HEADER *)pchData;
     int iCmdSize                    = getSendCmdSize((cmd_id_t)nCmd);
     FRAME_TAIL *pstFrameTaile       = (FRAME_TAIL *)(pchData + sizeof(FRAME_HEADER) + iCmdSize);
-    pstFrameHeader->unStx            = PACKET_STX;
-    pstFrameHeader->chSrcId         = PACKET_SRC_ID;
-    pstFrameHeader->chDstId         = PACKET_DST_ID;
+    pstFrameHeader->unStx           = PACKET_STX;
+    pstFrameHeader->stMsgId.chSrcId = pstMsgId->chSrcId;
+    pstFrameHeader->stMsgId.chDstId = pstMsgId->chDstId;
     pstFrameHeader->chSubModule     = 0x00;
     pstFrameHeader->iLength         = getRecvCmdSize((cmd_id_t)nCmd);
     pstFrameHeader->nCmd            = nCmd;
@@ -68,7 +81,7 @@ void makeRecvPacket(short nCmd, const char* chMsgId, const char* pchData)
 }
 
 
-unsigned int checkPacketFormat(char* pchRecvData, int iPacketSize) 
+unsigned int checkPacketFormat(const char* pchRecvData, const MSG_ID* pstMsgId, int iPacketSize) 
 {
     FRAME_HEADER* pstHeader = (FRAME_HEADER*)pchRecvData;
     int iPayloadSize = pstHeader->iLength;
@@ -82,15 +95,14 @@ unsigned int checkPacketFormat(char* pchRecvData, int iPacketSize)
     }
 
     if(pstHeader->unStx != PACKET_STX){
-        fprintf(stderr,"%d(%x) %d(%x)\n", pstHeader->unStx, pstHeader->unStx, PACKET_STX, PACKET_STX);
         uiResult |= PACKET_STX_ERROR;
     }
     
-    if(pstHeader->chSrcId != PACKET_SRC_ID){
+    if(pstHeader->stMsgId.chSrcId != pstMsgId->chSrcId){
         uiResult |= PACKET_SRC_ID_ERROR;
     }
 
-    if(pstHeader->chDstId != PACKET_DST_ID){
+    if(pstHeader->stMsgId.chDstId != pstMsgId->chDstId){
         uiResult |= PACKET_DST_ID_ERROR;
     }
 
@@ -99,7 +111,6 @@ unsigned int checkPacketFormat(char* pchRecvData, int iPacketSize)
     }
 
     if(pstTail->unEtx != PACKET_ETX){
-        fprintf(stderr,"%d(%x) %d(%x)\n", pstTail->unEtx, pstTail->unEtx, PACKET_ETX, PACKET_ETX);
         uiResult |= PACKET_ETX_ERROR;
     }
 

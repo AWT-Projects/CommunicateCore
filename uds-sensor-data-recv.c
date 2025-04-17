@@ -49,7 +49,7 @@ void* sensorServerThread(void* arg)
                     printf("[SensorServer] 새로운 연결: fd=%d\n", iClientSock);
                 }
             } else {
-                int iRecvSize = recv(iCurrFd, chSensorData, sizeof(chSensorData) - 1, 0);
+                int iRecvSize = udsRecvMsg(iCurrFd, chSensorData, sizeof(chSensorData));
                 if (iRecvSize <= 0) {
                     printf("[SensorServer] 연결 종료: fd=%d\n", iCurrFd);
                     close(iCurrFd);

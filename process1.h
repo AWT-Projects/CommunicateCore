@@ -26,7 +26,8 @@
  */
 typedef struct {
     char chData[BUFFER_SIZE];       /**< 클라이언트로부터 수신한 데이터 */
-    bool hasData;                   /**< 데이터 존재 여부 플래그 */
+    int iDataSize;
+    short nCmd;
     pthread_mutex_t mutex;          /**< 데이터 접근 동기화를 위한 뮤텍스 */
     pthread_cond_t cond;            /**< 데이터 준비 상태를 알리는 조건 변수 */
 } SHARED_DATA;

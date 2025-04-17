@@ -14,9 +14,7 @@ void *receiveThread(void *arg)
 {
     CLIENT_INFO *pstClientInfo = (CLIENT_INFO *)arg;
     FRAME_HEADER *pstRcvHeader;
-    FRAME_TAIL *pstRcvTail;
-    FRAME_HEADER *pstSndHeader;
-    FRAME_TAIL *pstSndTail;
+    MSG_ID stMsgId;
     struct sockaddr_in stSockClientAddr;
     socklen_t uiClientAddrLen = sizeof(stSockClientAddr);
     char achBuffer[BUFFER_SIZE];
@@ -25,11 +23,11 @@ void *receiveThread(void *arg)
     int iResponseSize;
     int iRetVal;
     char *pchResponse;
-    char chMsgId[2];
     char *pchPayload;
     char *pchCmdResult;
     unsigned int  uiPacketFormatStatus;
-
+    stMsgId.chSrcId = CTRL_PC_ID;
+    stMsgId.chDstId = MY_TCP_ID;
     fprintf(stderr,"### %s()%d Thread START ###\n", __func__,__LINE__);
     if (getpeername(pstClientInfo->iClientSock, (struct sockaddr *)&stSockClientAddr, &uiClientAddrLen) == -1) {
         perror("getpeername 실패");
@@ -56,35 +54,35 @@ void *receiveThread(void *arg)
                 fprintf(stderr,"### %s():%d ###\n", __func__,__LINE__);
                 /**< todo 삭제할 데이터 또는 이상한 데이터가 같이 들어온 경우 */
             }else{
-                uiPacketFormatStatus = checkPacketFormat(achBuffer, iRecvSize);
+                uiPacketFormatStatus = checkPacketFormat(achBuffer, &stMsgId, iRecvSize);
                 // 데이터 포멧이 안맞은 경우 처리 필요
 
+                //수신 데이터 처리
                 pstRcvHeader = (FRAME_HEADER *)achBuffer;
                 pchPayload = (char *)(achBuffer + sizeof(FRAME_HEADER));
-                pstRcvTail = (FRAME_TAIL *)(achBuffer + sizeof(FRAME_HEADER) + pstRcvHeader->iLength);
+                
+                
                 
                 iResponseSize = getSendCmdSize((cmd_id_t)pstRcvHeader->nCmd) + sizeof(FRAME_HEADER) + sizeof(FRAME_TAIL);
                 pchResponse = (char *)malloc(iResponseSize);
                 memset(pchResponse, 0x0, iResponseSize);
                 
-                pstSndHeader = (FRAME_HEADER *)pchResponse;
-                pchCmdResult = (char *)(pchResponse + sizeof(FRAME_HEADER));
-                pstSndTail = (FRAME_TAIL *)(pchResponse + sizeof(FRAME_HEADER)+ getSendCmdSize((cmd_id_t)pstRcvHeader->nCmd));
-                chMsgId[0] = pstRcvHeader->chDstId;
-                chMsgId[1] = pstRcvHeader->chSrcId;
-                makeSendPacket(pstRcvHeader->nCmd, chMsgId, pchResponse);
+                pchCmdResult = (char *)(pchResponse + sizeof(FRAME_HEADER));                
                 iRetVal = dispatchCommand(pstRcvHeader->nCmd, pchPayload, pchCmdResult, logging);
-                                
-                pthread_mutex_lock(&pstClientInfo->stSharedData.mutex);                
+
+                makeSendPacket(pstRcvHeader->nCmd, &stMsgId, pchResponse);
+                
                 /**< 데이터 존재 플래그 설정 */
-                pstClientInfo->stSharedData.hasData = true; 
+                pthread_mutex_lock(&pstClientInfo->stSharedData.mutex);
                 memset(pstClientInfo->stSharedData.chData, 0x0, BUFFER_SIZE);
                 memcpy(pstClientInfo->stSharedData.chData, pchResponse, iResponseSize);
+                pstClientInfo->stSharedData.iDataSize   = iResponseSize;
                 fprintf(stderr,"\nRAW DATA\n");
                 for(int i=0; i<iResponseSize; i++){
                     fprintf(stderr,"%02x ", (unsigned char)pchResponse[i]);
                 }
                 free(pchResponse);
+
                 /**< 조건 변수 신호 전송 */
                 pthread_cond_signal(&pstClientInfo->stSharedData.cond); 
                 pthread_mutex_unlock(&pstClientInfo->stSharedData.mutex);

@@ -33,7 +33,7 @@ int main() {
 
     iServerSock = createServerSocket(PORT, MAX_CLIENTS);
     fprintf(stdout, "포트 %d에서 서버 대기 중\n", PORT);
-    
+        
     while (1) {
         FD_ZERO(&stReadFds);
         FD_SET(iServerSock, &stReadFds);

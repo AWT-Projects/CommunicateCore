@@ -1,52 +1,131 @@
 #ifndef FRAME_FORMAT_H
 #define FRAME_FORMAT_H
 
-
+/**
+ * @def CRC_START_POINT
+ * @brief CRC 계산을 시작하는 오프셋 위치 (바이트 단위)
+ */
 #define CRC_START_POINT 		6
+/**
+ * @def EXCLUDING_CRC_POINT
+ * @brief CRC 계산에서 제외할 마지막 바이트 수 (CRC 및 ETX 등)
+ */
 #define EXCLUDING_CRC_POINT		3
+/**
+ * @def PACKET_STX
+ * @brief 패킷의 시작(STX)을 나타내는 고정 값
+ */
 #define PACKET_STX				0xF0F0
-#define PACKET_SRC_ID			0x01
-#define PACKET_DST_ID			0x02
+/**
+ * @def CTRL_PC_ID
+ * @brief 제어 PC의 송신자 ID
+ */
+#define CTRL_PC_ID				0x01
+/**
+ * @def PACKET_DST_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define MY_TCP_ID				0x02
+/**
+ * @def PACKET_ETX
+ * @brief 패킷의 끝(ETX)을 나타내는 고정 값
+ */
 #define PACKET_ETX				0xFFFF
 
-
+/**
+ * @enum PACKET_FORMAT_STATUS
+ * @brief 수신된 패킷의 포맷 검사 결과를 나타내는 열거형
+ */
 typedef enum{
-	PACKET_FORMAT_OK		= 0x00,
-	PACKET_STX_ERROR 		= 0x01,
-	PACKET_SRC_ID_ERROR		= 0x02,
-	PACKET_DST_ID_ERROR 	= 0x04,
-	PACKET_CRC_ERROR 		= 0x08,
-	PACKET_ETX_ERROR 		= 0x10,
-	PACKET_SIZE_ERROR 		= 0x20
+	PACKET_FORMAT_OK		= 0x00,	/**< 포맷 이상 없음 */
+	PACKET_STX_ERROR 		= 0x01,	/**< STX 오류 (시작 바이트 불일치) */
+	PACKET_SRC_ID_ERROR		= 0x02, /**< 송신 ID 오류 */
+	PACKET_DST_ID_ERROR 	= 0x04,	/**< 수신 ID 오류 */
+	PACKET_CRC_ERROR 		= 0x08,	/**< CRC 오류 */
+	PACKET_ETX_ERROR 		= 0x10, /**< ETX 오류 (종료 바이트 불일치) */
+	PACKET_SIZE_ERROR 		= 0x20 	/**< 패킷 길이 오류 */
 }PACKET_FORMAT_STATUS;
 
 /**
- * @brief FRAME_HEADER 구조체
- * 제어PC와 TCP/IP통신에 사용되는 데이터 포멧
+ * @struct MSG_ID
+ * @brief 송/수신자 ID 정보를 포함하는 구조체
+ *
+ * 통신 시 송신자와 수신자의 ID를 나타냅니다.
  */
 typedef struct __attribute__((__packed__)){
-	unsigned short 	unStx;			/**< 제어PC와 TCP/IP통신시 사용되는 데이터 프레임의 시작 */
-	int 			iLength;		/**< 제어PC와 TCP/IP통신시 전송되는 데이터의 크기 */
-	char 			chSrcId;		/**< 제어PC와 TCP/IP통신시 송신하는 장치ID */
-	char 			chDstId;		/**< 제어PC와 TCP/IP통신시 수신하는 장치ID */
-	char 			chSubModule;	/**< 안테나 제어장치에서는 사용되지 않음 */
-	short			nCmd;			/**< 제어PC와 TCP/IP통신시 데이터의 명령 종류 */
-}FRAME_HEADER;
+	char 			chSrcId;		/**< 송신자 ID (Source ID) */
+	char 			chDstId;		/**< 수신자 ID (Destination ID) */
+}MSG_ID;
 
 /**
- * @brief FRAME_PACKET 구조체
- * 제어PC와 TCP/IP통신에 사용되는 데이터 프레임 정보를 가진다.
+ * @struct FRAME_HEADER
+ * @brief 데이터 프레임의 헤더 구조체
+ *
+ * 패킷의 시작 정보, 메시지 식별자, 데이터 길이 및 명령 번호를 포함합니다.
  */
-typedef struct __attribute__((__packed__)){
-	char 			chCrc;			    /**< 제어PC와 TCP/IP통신시 사용되는 데이터의 CRC값 */
-	unsigned short 	unEtx;			    /**< 제어PC와 TCP/IP통신시 사용되는 데이터 프레임의 끝 */
-}FRAME_TAIL;
+typedef struct __attribute__((__packed__)) {
+    unsigned short unStx;       /**< 프레임 시작 바이트 (STX) */
+    int            iLength;     /**< 데이터 필드의 길이 (Payload 크기) */
+    MSG_ID         stMsgId;     /**< 송신자 및 수신자 ID 정보 */
+    char           chSubModule; /**< 서브모듈 ID (해당 시스템에서는 사용되지 않음) */
+    short          nCmd;        /**< 명령 코드 */
+} FRAME_HEADER;
+
+/**
+ * @struct FRAME_TAIL
+ * @brief 데이터 프레임의 끝 구조체
+ *
+ * CRC 및 프레임 종료 바이트를 포함합니다.
+ */
+typedef struct __attribute__((__packed__)) {
+    char           chCrc;       /**< 데이터에 대한 CRC 값 */
+    unsigned short unEtx;       /**< 프레임 종료 바이트 (ETX) */
+} FRAME_TAIL;
 
 
-void makeSendPacket(short nCmd, const char* chMsgId, const char* pchData);
-void makeRecvPacket(short nCmd, const char* chMsgId, const char* pchData);
-unsigned int checkPacketFormat(char* pchRecvData, int iPacketSize);
-int getTotalRecvSize(char* pchRecvData, int iRecvSize);
+/**
+ * @brief 수신한 데이터에서 전체 패킷 크기를 계산합니다.
+ *
+ * @param pchRecvData 수신된 데이터 버퍼
+ * @param iRecvSize 수신된 전체 데이터 크기
+ * @return 전체 패킷 크기, 실패 시 -1
+ */
+int getTotalRecvSize(const char* pchRecvData, int iRecvSize);
 
+/**
+ * @brief 송신용 패킷을 생성합니다.
+ *
+ * @param nCmd 명령 코드
+ * @param pstMsgId 송/수신 ID 정보
+ * @param pchData 패킷이 생성될 버퍼 (프리할당 필요)
+ */
+void makeSendPacket(short nCmd, const MSG_ID* pstMsgId, const char* pchData);
+
+/**
+ * @brief 단위 테스트용 수신 패킷을 생성합니다.
+ *
+ * @param nCmd 명령 코드
+ * @param pstMsgId 송/수신 ID 정보
+ * @param pchData 패킷이 생성될 버퍼 (프리할당 필요)
+ */
+void makeRecvPacket(short nCmd, const MSG_ID* pstMsgId, const char* pchData);
+
+/**
+ * @brief 수신된 패킷의 포맷이 정상인지 검사합니다.
+ *
+ * @param pchRecvData 수신된 패킷 데이터
+ * @param pstMsgId 기대되는 송/수신 ID 정보
+ * @param iPacketSize 수신된 전체 패킷 크기
+ * @return 포맷 오류 결과 (비트 OR 형식, PACKET_FORMAT_STATUS 사용)
+ */
+unsigned int checkPacketFormat(const char* pchRecvData, const MSG_ID* pstMsgId, int iPacketSize);
+
+/**
+ * @brief 패킷 포맷 검사 결과를 출력합니다.
+ *
+ * @param uiResult checkPacketFormat에서 반환된 결과 값
+ */
 void printPacketFormatError(unsigned int uiResult);
+
+
 #endif
