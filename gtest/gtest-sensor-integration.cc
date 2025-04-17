@@ -9,6 +9,7 @@
 #include "../cmd-handler.h"
 #include "../command.h"
 #include "../process2.h"
+#include <sys/un.h>
 
 // 서버 쓰레드를 gtest에서 실행
 class UDSServerTestEnv : public ::testing::Environment {
@@ -16,15 +17,31 @@ public:
     pthread_t server_tid;
     pthread_t processing_tid;
     SHARED_SENSOR_DATA stSharedSensorData;
+    int iUdsClientSock;
 
     void SetUp() override {
+        // UDS 클라이언트 생성 및 연결
+        iUdsClientSock = socket(AF_UNIX, SOCK_STREAM, 0);
+        ASSERT_GT(iUdsClientSock, 0);
+
+        struct sockaddr_un addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, SENSOR_PROCESSING_SOCK, sizeof(addr.sun_path) - 1);
+
         // 뮤텍스 및 조건변수 초기화
         pthread_mutex_init(&stSharedSensorData.mutex, nullptr);
         pthread_cond_init(&stSharedSensorData.cond, nullptr);
 
         pthread_create(&server_tid, nullptr, sensorCollectorThread, &stSharedSensorData);
         pthread_create(&processing_tid, nullptr, sensorProcessingThread, &stSharedSensorData);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(200)); // 서버 준비 대기
+        ASSERT_EQ(connect(iUdsClientSock, (struct sockaddr*)&addr, sizeof(addr)), 0);
+    }
+
+    int receiveResult(char* buffer, int maxSize) {
+        return recv(iUdsClientSock, buffer, maxSize, 0);
     }
 
     void TearDown() override {
@@ -101,6 +118,24 @@ TEST(UDSSocketMultiClientTest, SimultaneousClientDataSend10Times) {
     std::thread t3(sendDataRepeated, EXTERN3_ID,    achExtern3Data, sizeof(EXTERNAL3_DATA)+iFrameSize,  21);
     std::thread t4(sendDataRepeated, EXTERN4_ID,    achExtern4Data, sizeof(EXTERNAL4_DATA)+iFrameSize,  22);
 
+        // 결과 수신 및 검증 (테스트 환경으로부터)
+    auto* testEnv = static_cast<UDSServerTestEnv*>(::testing::AddGlobalTestEnvironment(nullptr));
+
+    for (int i = 0; i < 10; ++i) {
+        char resultBuf[128] = {0};
+        int len = testEnv->receiveResult(resultBuf, sizeof(resultBuf));
+        ASSERT_GT(len, 0) << "수신 실패";
+
+        // 결과 구조체 해석
+        FRAME_HEADER* pHeader = (FRAME_HEADER*)resultBuf;
+        // EXPECT_EQ(pHeader->nStx, PACKET_STX);
+        // EXPECT_EQ(pHeader->chDstId, EXTERN1_ID);  // 예시
+
+        PROCESSING_DATA* pResult = (PROCESSING_DATA*)(resultBuf + sizeof(FRAME_HEADER));
+        EXPECT_NEAR(pResult->dAz, 7.1f, 0.001);  // 예시
+        EXPECT_NEAR(pResult->dEl, 8.1f, 0.001);
+    }
+    
     t1.join();
     t2.join();
     t3.join();
