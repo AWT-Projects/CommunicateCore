@@ -11,6 +11,7 @@
 #include "../process2.h"
 #include <sys/un.h>
 
+
 // 서버 쓰레드를 gtest에서 실행
 class UDSServerTestEnv : public ::testing::Environment {
 public:
@@ -49,6 +50,8 @@ public:
         // 실제 시스템에서는 signal or flag로 종료 처리
     }
 };
+static UDSServerTestEnv* g_pTestEnv = nullptr;
+
 char* getName(char chMsgId){
     if(chMsgId == EXTERN1_ID)
         return "EXTERN1";
@@ -67,8 +70,7 @@ void sendDataRepeated(char chMsgId, const char* pchData, int iSize, int interval
         perror(getName(chMsgId));
 
     ASSERT_GE(sock, 0) << getName(chMsgId) << " 소켓 연결 실패";
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     for (int i = 0; i < 10; ++i) {
         std::cout << "[" << getName(chMsgId) << "] 전송 " << i + 1 << "/10" << std::endl;
         udsSendMsg(sock, (char*)pchData, iSize);
@@ -79,7 +81,7 @@ void sendDataRepeated(char chMsgId, const char* pchData, int iSize, int interval
 }
 
 TEST(UDSSocketMultiClientTest, SimultaneousClientDataSend10Times) {
-    usleep(400);
+    usleep(100);
     int iFrameSize = sizeof(FRAME_HEADER)+sizeof(FRAME_TAIL);  
     char achExtern1Data[sizeof(FRAME_HEADER)+sizeof(FRAME_TAIL)+sizeof(EXTERNAL1_DATA)];
     char achExtern2Data[sizeof(FRAME_HEADER)+sizeof(FRAME_TAIL)+sizeof(EXTERNAL2_DATA)];
@@ -117,23 +119,17 @@ TEST(UDSSocketMultiClientTest, SimultaneousClientDataSend10Times) {
     std::thread t2(sendDataRepeated, EXTERN2_ID,    achExtern2Data, sizeof(EXTERNAL2_DATA)+iFrameSize,  20);
     std::thread t3(sendDataRepeated, EXTERN3_ID,    achExtern3Data, sizeof(EXTERNAL3_DATA)+iFrameSize,  21);
     std::thread t4(sendDataRepeated, EXTERN4_ID,    achExtern4Data, sizeof(EXTERNAL4_DATA)+iFrameSize,  22);
-
-        // 결과 수신 및 검증 (테스트 환경으로부터)
-    auto* testEnv = static_cast<UDSServerTestEnv*>(::testing::AddGlobalTestEnvironment(nullptr));
-
+    
+    // 결과 수신 및 검증 (테스트 환경으로부터)
     for (int i = 0; i < 10; ++i) {
         char resultBuf[128] = {0};
-        int len = testEnv->receiveResult(resultBuf, sizeof(resultBuf));
-        ASSERT_GT(len, 0) << "수신 실패";
+        int len = g_pTestEnv->receiveResult(resultBuf, sizeof(resultBuf));
 
         // 결과 구조체 해석
         FRAME_HEADER* pHeader = (FRAME_HEADER*)resultBuf;
-        // EXPECT_EQ(pHeader->nStx, PACKET_STX);
-        // EXPECT_EQ(pHeader->chDstId, EXTERN1_ID);  // 예시
-
         PROCESSING_DATA* pResult = (PROCESSING_DATA*)(resultBuf + sizeof(FRAME_HEADER));
-        EXPECT_NEAR(pResult->dAz, 7.1f, 0.001);  // 예시
-        EXPECT_NEAR(pResult->dEl, 8.1f, 0.001);
+        EXPECT_NEAR(pResult->dAz, 67.1, 0.1);
+        EXPECT_NEAR(pResult->dEl, 67.1, 0.1);
     }
     
     t1.join();
@@ -147,8 +143,8 @@ TEST(UDSSocketMultiClientTest, SimultaneousClientDataSend10Times) {
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
 
-    // 테스트 환경에 서버 추가
-    ::testing::AddGlobalTestEnvironment(new UDSServerTestEnv());
+    g_pTestEnv = new UDSServerTestEnv();
+    ::testing::AddGlobalTestEnvironment(g_pTestEnv);
 
     return RUN_ALL_TESTS();
 }

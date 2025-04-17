@@ -65,12 +65,18 @@ void* sensorCollectorThread(void* arg)
                 // 데이터 포멧이 안맞은 경우 처리 필요
                 pstRcvHeader = (FRAME_HEADER *)chSensorData;
                 pchPayload = (char *)(chSensorData + sizeof(FRAME_HEADER));
-                pthread_mutex_lock(&pstSharedSensorData->mutex);
-                dispatchCommand(pstRcvHeader->nCmd, pchPayload, (char *)&pstSharedSensorData->stSensorData, logging);
+                if(pstRcvHeader->stMsgId.chSrcId == EXTERN4_ID){
+                    pthread_mutex_lock(&pstSharedSensorData->mutex);
+                    dispatchCommand(pstRcvHeader->nCmd, pchPayload, (char *)&pstSharedSensorData->stSensorData, logging);
 
-                // 프레임 포멧에서 src가 SP, Exter, Keyboard인 경우만 cond_signal 보내기
-                pthread_cond_signal(&pstSharedSensorData->cond); 
-                pthread_mutex_unlock(&pstSharedSensorData->mutex);
+                    // 프레임 포멧에서 src가 SP, Exter, Keyboard인 경우만 cond_signal 보내기
+                    pthread_cond_signal(&pstSharedSensorData->cond); 
+                    pthread_mutex_unlock(&pstSharedSensorData->mutex);
+                }else{
+                    pthread_mutex_lock(&pstSharedSensorData->mutex);
+                    dispatchCommand(pstRcvHeader->nCmd, pchPayload, (char *)&pstSharedSensorData->stSensorData, logging);
+                    pthread_mutex_unlock(&pstSharedSensorData->mutex);
+                }
             }
         }
     }
