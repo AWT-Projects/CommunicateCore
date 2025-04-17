@@ -1,12 +1,10 @@
-
 #include <sys/socket.h>
 #include <sys/un.h>
-
 
 #include "frame-format.h"
 #include "cmd-handler.h"
 #include "command.h"
-#include <uds.h>
+
 #include "process2.h"
 
 #define MAX_CLIENTS 5
@@ -15,10 +13,10 @@ typedef struct {
     int iSensorId;
 } SENSOR_CLIENT;
 
-void* sensorServerThread(void* arg) 
+void* sensorCollectorThread(void* arg) 
 {
     SHARED_SENSOR_DATA *pstSharedSensorData = (SHARED_SENSOR_DATA*)arg;
-    int iServerSock = createUdsServerSocket("/tmp/sensor_recv_data.sock", MAX_CLIENTS);
+    int iServerSock = createUdsServerSocket(SENSOR_COLLECT_SOCK, MAX_CLIENTS);
     fd_set masterSet, readSet;
     int iMaxFd;
     char chSensorData[128];
@@ -29,6 +27,7 @@ void* sensorServerThread(void* arg)
     unsigned int  uiPacketFormatStatus;
     FRAME_HEADER *pstRcvHeader;
     char *pchPayload;
+    MSG_ID stMsgId = {UNKNOWN_ID, UDS2_ID};
     printf("서버가 시작되었습니다. 클라이언트 연결을 기다립니다...\n");
     while (1) {
         readSet = masterSet;
@@ -62,7 +61,7 @@ void* sensorServerThread(void* arg)
                     }
                     continue;
                 }
-                uiPacketFormatStatus = checkPacketFormat(chSensorData, iRecvSize);
+                uiPacketFormatStatus = checkPacketFormat(chSensorData, &stMsgId, iRecvSize);
                 // 데이터 포멧이 안맞은 경우 처리 필요
                 pstRcvHeader = (FRAME_HEADER *)chSensorData;
                 pchPayload = (char *)(chSensorData + sizeof(FRAME_HEADER));
@@ -71,7 +70,6 @@ void* sensorServerThread(void* arg)
 
                 // 프레임 포멧에서 src가 SP, Exter, Keyboard인 경우만 cond_signal 보내기
                 pthread_cond_signal(&pstSharedSensorData->cond); 
-
                 pthread_mutex_unlock(&pstSharedSensorData->mutex);
             }
         }
