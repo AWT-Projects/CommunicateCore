@@ -6,26 +6,67 @@
  * @brief CRC 계산을 시작하는 오프셋 위치 (바이트 단위)
  */
 #define CRC_START_POINT 		6
+
 /**
  * @def EXCLUDING_CRC_POINT
  * @brief CRC 계산에서 제외할 마지막 바이트 수 (CRC 및 ETX 등)
  */
 #define EXCLUDING_CRC_POINT		3
+
 /**
  * @def PACKET_STX
  * @brief 패킷의 시작(STX)을 나타내는 고정 값
  */
 #define PACKET_STX				0xF0F0
+
+/**
+ * @def UNKNOWN_ID
+ * @brief 응답이 필요 없는 경우 사용
+ */
+#define UNKNOWN_ID				0x00
+
 /**
  * @def CTRL_PC_ID
  * @brief 제어 PC의 송신자 ID
  */
 #define CTRL_PC_ID				0x01
+
 /**
- * @def PACKET_DST_ID
+ * @def MY_TCP_ID
  * @brief 수신 대상 장치의 ID
  */
 #define MY_TCP_ID				0x02
+
+/**
+ * @def UDS2_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define UDS2_ID					0x10
+
+/**
+ * @def EXTERN1_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define EXTERN1_ID				0x11
+
+/**
+ * @def EXTERN2_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define EXTERN2_ID				0x12
+
+/**
+ * @def EXTERN3_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define EXTERN3_ID				0x13
+
+/**
+ * @def EXTERN4_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define EXTERN4_ID				0x14
+
 /**
  * @def PACKET_ETX
  * @brief 패킷의 끝(ETX)을 나타내는 고정 값

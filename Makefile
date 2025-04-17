@@ -1,6 +1,7 @@
-PROCESS1_APP 			= process1
-PROCESS2_APP 			= process2
-GTEST_TCP_RECV_SEND		= gtest-tcp-recv-send
+PROCESS1_APP 				= process1
+PROCESS2_APP 				= process2
+GTEST_TCP_RECV_SEND			= gtest-tcp-recv-send
+GTEST_SENSOR_INTEGRATION	= gtest-sensor-integration
 
 SRC_DIR = .
 # 구글테스트 관련 설정
@@ -12,7 +13,7 @@ MY_GTEST_DIR = gtest
 
 # 테스트에서 제외할 .c 파일들 (main 함수 포함)
 EXCLUDE_SRCS = $(SRC_DIR)/process1.c $(SRC_DIR)/process2.c
-EXCLUDE_TCP_SRCS = $(SRC_DIR)/uds-sensor-data-recv.c $(MY_GTEST_DIR)/gtest-uds-recv-thread.cc
+EXCLUDE_TCP_SRCS = $(SRC_DIR)/uds-sensor-data-recv.c $(MY_GTEST_DIR)/gtest-sensor-integration.cc
 EXCLUDE_UDS_SRCS = $(SRC_DIR)/send-thread.c $(SRC_DIR)/recv-thread.c $(MY_GTEST_DIR)/gtest-tcp-recv-send.cc
 
 # 테스트 대상 .c 파일 목록 (process1.c 제외)
@@ -25,7 +26,7 @@ FOR_GTEST_UDS_OBJS = $(patsubst %.c, %_gtest.o, $(FOR_GTEST_UDS_SRCS))
 
 # GTest 전용 테스트 소스
 MY_TCP_GTEST_SRCS = $(MY_GTEST_DIR)/gtest-tcp-recv-send.cc
-MY_UDS_GTEST_SRCS = $(MY_GTEST_DIR)/gtest-uds-recv-thread.cc
+MY_UDS_GTEST_SRCS = $(MY_GTEST_DIR)/gtest-sensor-integration.cc
 
 MY_TCP_GTEST_OBJS = $(patsubst %.cc, %.o, $(MY_TCP_GTEST_SRCS))
 MY_UDS_GTEST_OBJS = $(patsubst %.cc, %.o, $(MY_UDS_GTEST_SRCS))
@@ -56,8 +57,8 @@ $(OBJS_DIR)/%.o: %.c
 gtest-tcp: $(MY_TCP_GTEST_OBJS) $(FOR_GTEST_TCP_OBJS)
 	$(CXX) $(GTEST_CFLAGS) -o $(GTEST_TCP_RECV_SEND) $(MY_TCP_GTEST_SRCS) $(FOR_GTEST_TCP_OBJS) $(GTEST_LDFLAGS) -ltcpsock_desktop
 
-gtest-uds: $(MY_UDS_GTEST_OBJS) $(FOR_GTEST_UDS_OBJS)
-	$(CXX) $(GTEST_CFLAGS) -o $@ $(MY_UDS_GTEST_SRCS) $(FOR_GTEST_UDS_OBJS) $(GTEST_LDFLAGS) -luds $(LDLIBS) -I./
+gtest-sensor: $(MY_UDS_GTEST_OBJS) $(FOR_GTEST_UDS_OBJS)
+	$(CXX) $(GTEST_CFLAGS) -o $(GTEST_SENSOR_INTEGRATION) $(MY_UDS_GTEST_SRCS) $(FOR_GTEST_UDS_OBJS) $(GTEST_LDFLAGS) -luds $(LDLIBS) -I./
 
 # .c → .gtest.o 규칙
 %_gtest.o: %.c
@@ -65,5 +66,6 @@ gtest-uds: $(MY_UDS_GTEST_OBJS) $(FOR_GTEST_UDS_OBJS)
 
 
 clean:
-	-rm -f $(PROCESS1_APP) $(PROCESS1_APP_OBJS) $(MY_TCP_GTEST_OBJS) $(MY_UDS_GTEST_OBJS) $(FOR_GTEST_TCP_OBJS) $(FOR_GTEST_UDS_OBJS) $(GTEST_TCP_RECV_SEND) 
+	-rm -f $(PROCESS1_APP) $(PROCESS1_APP_OBJS) $(MY_TCP_GTEST_OBJS) $(MY_UDS_GTEST_OBJS) \
+	 $(FOR_GTEST_TCP_OBJS) $(FOR_GTEST_UDS_OBJS) $(GTEST_TCP_RECV_SEND) $(GTEST_SENSOR_INTEGRATION)
 	

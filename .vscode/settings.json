@@ -4,6 +4,7 @@
         "thread": "cpp",
         "uds.h": "c",
         "process2.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "typeinfo": "cpp"
     }
 }

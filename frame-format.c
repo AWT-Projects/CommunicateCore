@@ -98,9 +98,9 @@ unsigned int checkPacketFormat(const char* pchRecvData, const MSG_ID* pstMsgId, 
         uiResult |= PACKET_STX_ERROR;
     }
     
-    if(pstHeader->stMsgId.chSrcId != pstMsgId->chSrcId){
-        uiResult |= PACKET_SRC_ID_ERROR;
-    }
+    // if(pstHeader->stMsgId.chSrcId != pstMsgId->chSrcId){
+    //     uiResult |= PACKET_SRC_ID_ERROR;
+    // }
 
     if(pstHeader->stMsgId.chDstId != pstMsgId->chDstId){
         uiResult |= PACKET_DST_ID_ERROR;
