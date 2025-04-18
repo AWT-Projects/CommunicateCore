@@ -1,6 +1,7 @@
 #include "process2.h"
 #include "frame-format.h"
 #include "cmd-handler.h"
+#include "uds-socket-path.h"
 #include <sys/time.h>
 
 void* sensorProcessingThread(void* arg) 
@@ -40,22 +41,6 @@ void* sensorProcessingThread(void* arg)
         if (ret != ETIMEDOUT) {
             memcpy(&stSensorData, &pstSharedSensorData->stSensorData, sizeof(SENSOR_DATA));
             pthread_mutex_unlock(&pstSharedSensorData->mutex);
-
-            // 연산 알고리즘 
-            // fprintf(stderr,"Latitude : %lf\n", stSensorData.stExtern1Data.dLatitude);
-            // fprintf(stderr,"Longitude : %lf\n", stSensorData.stExtern1Data.dLongitude);
-            // fprintf(stderr,"Altitude : %lf\n", stSensorData.stExtern1Data.dAltitude);
-
-            // fprintf(stderr,"Roll : %lf\n", stSensorData.stExtern2Data.dRoll);
-            // fprintf(stderr,"Pitch : %lf\n", stSensorData.stExtern2Data.dPitch);
-            // fprintf(stderr,"Yaw : %lf\n", stSensorData.stExtern2Data.dYaw);
-            
-            // fprintf(stderr,"AZ : %lf\n", stSensorData.stExtern3Data.dAz);
-            // fprintf(stderr,"EL : %lf\n", stSensorData.stExtern3Data.dEl);
-
-            // fprintf(stderr,"Latitude : %lf\n", stSensorData.stExtern4Data.dLatitude);
-            // fprintf(stderr,"Longitude : %lf\n", stSensorData.stExtern4Data.dLongitude);
-            // fprintf(stderr,"Altitude : %lf\n", stSensorData.stExtern4Data.dAltitude);
             dProcessData = stSensorData.stExtern1Data.dLatitude + stSensorData.stExtern1Data.dLongitude + stSensorData.stExtern1Data.dAltitude \
                             + stSensorData.stExtern2Data.dRoll + stSensorData.stExtern2Data.dPitch + stSensorData.stExtern2Data.dYaw \
                             + stSensorData.stExtern3Data.dAz + stSensorData.stExtern3Data.dEl \

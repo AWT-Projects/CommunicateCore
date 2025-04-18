@@ -4,7 +4,7 @@
 #include "frame-format.h"
 #include "cmd-handler.h"
 #include "command.h"
-
+#include "uds-socket-path.h"
 #include "process2.h"
 
 #define MAX_CLIENTS 5

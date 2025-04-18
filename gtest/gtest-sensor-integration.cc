@@ -9,6 +9,7 @@
 #include "../cmd-handler.h"
 #include "../command.h"
 #include "../process2.h"
+#include "../uds-socket-path.h"
 #include <sys/un.h>
 
 

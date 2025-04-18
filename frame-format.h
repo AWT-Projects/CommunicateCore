@@ -44,28 +44,40 @@
 #define UDS2_ID					0x10
 
 /**
+ * @def UDS3_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define UDS33_ID				0x11
+
+/**
+ * @def UDS4_ID
+ * @brief 수신 대상 장치의 ID
+ */
+#define UDS4_ID					0x12
+
+/**
  * @def EXTERN1_ID
  * @brief 수신 대상 장치의 ID
  */
-#define EXTERN1_ID				0x11
+#define EXTERN1_ID				0x21
 
 /**
  * @def EXTERN2_ID
  * @brief 수신 대상 장치의 ID
  */
-#define EXTERN2_ID				0x12
+#define EXTERN2_ID				0x22
 
 /**
  * @def EXTERN3_ID
  * @brief 수신 대상 장치의 ID
  */
-#define EXTERN3_ID				0x13
+#define EXTERN3_ID				0x23
 
 /**
  * @def EXTERN4_ID
  * @brief 수신 대상 장치의 ID
  */
-#define EXTERN4_ID				0x14
+#define EXTERN4_ID				0x24
 
 /**
  * @def PACKET_ETX

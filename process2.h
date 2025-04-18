@@ -14,9 +14,6 @@
 void* sensorCollectorThread(void* arg);
 void* sensorProcessingThread(void* arg);
 
-#define SENSOR_COLLECT_SOCK     "/tmp/sensor_collect.sock"
-#define SENSOR_PROCESSING_SOCK  "/tmp/sensor_processing.sock"
-
 typedef struct{
     SENSOR_DATA stSensorData;
     pthread_mutex_t mutex;    /**<  */
